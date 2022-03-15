@@ -83,4 +83,6 @@ describe('SignUp Controller', () => {
       new MissingParamsError('passwordConfirmation'),
     );
   });
+
+  // ? Todos os campos foram validados
 });
