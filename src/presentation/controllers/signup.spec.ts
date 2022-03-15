@@ -1,9 +1,17 @@
 import { SignUpController } from './signup';
-import { MissingParamsError } from '../errors/missing-params-error'; // Classe que vai lidar com os error
+// Classe que vai lidar com os error
+import { MissingParamsError } from '../errors/missing-params-error';
+
+/**
+ * Movendo a criação do SUT para um factory
+ */
+const makeSut = (): SignUpController => {
+  return new SignUpController();
+};
 
 describe('SignUp Controller', () => {
   test('Should return 400 if no name is provided', () => {
-    const sut = new SignUpController();
+    const sut = makeSut();
 
     /**
      * Enviando os dados sem o name, sendo um campo obrigatorio!
@@ -23,7 +31,7 @@ describe('SignUp Controller', () => {
   });
 
   test('Should return 400 if no email is provided', () => {
-    const sut = new SignUpController();
+    const sut = makeSut();
 
     /**
      * Enviando os dados sem o email, sendo um campo obrigatorio!
@@ -43,7 +51,7 @@ describe('SignUp Controller', () => {
   });
 
   test('Should return 400 if no password is provided', () => {
-    const sut = new SignUpController();
+    const sut = makeSut();
 
     /**
      * Enviando os dados sem o password, sendo um campo obrigatorio!
@@ -63,10 +71,10 @@ describe('SignUp Controller', () => {
   });
 
   test('Should return 400 if no password confirmation is provided', () => {
-    const sut = new SignUpController();
+    const sut = makeSut();
 
     /**
-     * Enviando os dados sem o password, sendo um campo obrigatorio!
+     * Enviando os dados sem o password confirmation, sendo um campo obrigatorio!
      * Tem que dar um erro 400 quando não enviamos um request sem o campo PASSWORD
      */
     const httpRequest = {
