@@ -114,7 +114,6 @@ describe('SignUp Controller', () => {
 
   // ? Todos os campos foram validados
 
-  // todo --- Validar se o email é valido
   test('Should return 400 if an invalid email is provided', () => {
     const { sut, emailValidatorStub } = makeSut();
     /**
@@ -137,5 +136,22 @@ describe('SignUp Controller', () => {
     const httpResponse = sut.handle(httpRequest);
     expect(httpResponse.statusCode).toBe(400);
     expect(httpResponse.body).toEqual(new InvalidParamsError('email'));
+  });
+
+  test('Should return 400 if an invalid email is provided', () => {
+    const { sut, emailValidatorStub } = makeSut();
+    const isValidSpy = jest.spyOn(emailValidatorStub, 'isValid');
+    const httpRequest = {
+      body: {
+        name: 'any_name',
+        email: 'any_email@email.com',
+        password: 'any_password',
+        passwordConfirmation: 'any_password',
+      },
+    };
+
+    sut.handle(httpRequest);
+    // Essa função serve para verificar se o email está correto, usando o isValidSpy
+    expect(isValidSpy).toHaveBeenCalledWith('any_email@email.com');
   });
 });
