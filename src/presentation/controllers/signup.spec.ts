@@ -2,11 +2,8 @@ import { SignUpController } from './signup';
 // Classe que vai lidar com os error
 import { ServerError, InvalidParamsError, MissingParamsError } from '../errors';
 import { EmailValidator } from '../protocols';
-
-interface SutTypes {
-  sut: SignUpController;
-  emailValidatorStub: EmailValidator;
-}
+import { AccountModel } from '../../domain/models/account';
+import { AddAccount, AddAccountModel } from '../../domain/usecases/add-account';
 
 const makeEmailValidator = (): EmailValidator => {
   class EmailValidatorStub implements EmailValidator {
@@ -17,15 +14,26 @@ const makeEmailValidator = (): EmailValidator => {
   return new EmailValidatorStub();
 };
 
-const makeEmailValidatorWithError = (): EmailValidator => {
-  class EmailValidatorStub implements EmailValidator {
-    isValid(email: string): boolean {
-      throw new Error();
+const makeAddAccount = (): AddAccount => {
+  class AddAccountStub implements AddAccount {
+    add(account: AddAccountModel): AccountModel {
+      const fakeAccount = {
+        id: 'valid_id',
+        name: 'valid_name',
+        email: 'valid_email@mail.com',
+        password: 'valid_passoword',
+      };
+      return fakeAccount;
     }
   }
-  return new EmailValidatorStub();
+  return new AddAccountStub();
 };
 
+interface SutTypes {
+  sut: SignUpController;
+  emailValidatorStub: EmailValidator;
+  addAccountStub: AddAccount;
+}
 /**
  * Movendo a criação do SUT para um factory,
  * ao adicionar dependencias ao nossos controllers, não vamos precisar fazer estanciar em todos os testes, apenas injetamos no MAKESUT
@@ -38,10 +46,12 @@ const makeSut = (): SutTypes => {
    * Temos que garantir que o EmailValidatorStub implementa a interface EmailValidator
    */
   const emailValidatorStub = makeEmailValidator();
-  const sut = new SignUpController(emailValidatorStub);
+  const addAccountStub = makeAddAccount();
+  const sut = new SignUpController(emailValidatorStub, addAccountStub);
   return {
     sut,
     emailValidatorStub,
+    addAccountStub,
   };
 };
 
@@ -190,11 +200,10 @@ describe('SignUp Controller', () => {
   });
 
   test('Should return 500 if EmailValidator throws', () => {
-    const emailValidatorStub = makeEmailValidatorWithError();
-    const sut = new SignUpController(emailValidatorStub);
-    /**
-     * Enviando um request com todos os parametros, e vamos validar se o EMAIL é valido
-     */
+    const { sut, emailValidatorStub } = makeSut();
+    jest.spyOn(emailValidatorStub, 'isValid').mockImplementationOnce(() => {
+      throw new Error();
+    });
     const httpRequest = {
       body: {
         name: 'any_name',
@@ -207,5 +216,28 @@ describe('SignUp Controller', () => {
     const httpResponse = sut.handle(httpRequest);
     expect(httpResponse.statusCode).toBe(500);
     expect(httpResponse.body).toEqual(new ServerError());
+  });
+
+  test('Should call AddAcount with correct values', () => {
+    const { sut, addAccountStub } = makeSut();
+    const addSpy = jest.spyOn(addAccountStub, 'add');
+    /**
+     * Enviando um request com todos os parametros, e vamos validar se o EMAIL é valido
+     */
+    const httpRequest = {
+      body: {
+        name: 'any_name',
+        email: 'any_email@email.com', // não faz diferença o texto, apenas para dar mais semantica
+        password: 'any_password',
+        passwordConfirmation: 'any_password',
+      },
+    };
+
+    sut.handle(httpRequest);
+    expect(addSpy).toHaveBeenCalledWith({
+      name: 'any_name',
+      email: 'any_email@email.com',
+      password: 'any_password',
+    });
   });
 });
