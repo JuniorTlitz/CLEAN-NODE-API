@@ -3,6 +3,7 @@ import { SignUpController } from './signup';
 import { MissingParamsError } from '../errors/missing-params-error';
 import { InvalidParamsError } from '../errors/invalid-params-error';
 import { EmailValidator } from '../protocols/email-validator';
+import { ServerError } from '../errors/server-error';
 
 interface SutTypes {
   sut: SignUpController;
@@ -138,7 +139,7 @@ describe('SignUp Controller', () => {
     expect(httpResponse.body).toEqual(new InvalidParamsError('email'));
   });
 
-  test('Should return 400 if an invalid email is provided', () => {
+  test('Should call EmailValidator with correct email', () => {
     const { sut, emailValidatorStub } = makeSut();
     const isValidSpy = jest.spyOn(emailValidatorStub, 'isValid');
     const httpRequest = {
@@ -153,5 +154,30 @@ describe('SignUp Controller', () => {
     sut.handle(httpRequest);
     // Essa função serve para verificar se o email está correto, usando o isValidSpy
     expect(isValidSpy).toHaveBeenCalledWith('any_email@email.com');
+  });
+
+  test('Should return 500 if EmailValidator throws', () => {
+    class EmailValidatorStub implements EmailValidator {
+      isValid(email: string): boolean {
+        throw new Error();
+      }
+    }
+    const emailValidatorStub = new EmailValidatorStub();
+    const sut = new SignUpController(emailValidatorStub);
+    /**
+     * Enviando um request com todos os parametros, e vamos validar se o EMAIL é valido
+     */
+    const httpRequest = {
+      body: {
+        name: 'any_name',
+        email: 'any_email@email.com', // não faz diferença o texto, apenas para dar mais semantica
+        password: 'any_password',
+        passwordConfirmation: 'any_password',
+      },
+    };
+
+    const httpResponse = sut.handle(httpRequest);
+    expect(httpResponse.statusCode).toBe(500);
+    expect(httpResponse.body).toEqual(new ServerError());
   });
 });
