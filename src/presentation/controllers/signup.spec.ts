@@ -8,6 +8,24 @@ interface SutTypes {
   emailValidatorStub: EmailValidator;
 }
 
+const makeEmailValidator = (): EmailValidator => {
+  class EmailValidatorStub implements EmailValidator {
+    isValid(email: string): boolean {
+      return true;
+    }
+  }
+  return new EmailValidatorStub();
+};
+
+const makeEmailValidatorWithError = (): EmailValidator => {
+  class EmailValidatorStub implements EmailValidator {
+    isValid(email: string): boolean {
+      throw new Error();
+    }
+  }
+  return new EmailValidatorStub();
+};
+
 /**
  * Movendo a criação do SUT para um factory,
  * ao adicionar dependencias ao nossos controllers, não vamos precisar fazer estanciar em todos os testes, apenas injetamos no MAKESUT
@@ -19,12 +37,7 @@ const makeSut = (): SutTypes => {
    * tomamos uma ação com o retorno da função
    * Temos que garantir que o EmailValidatorStub implementa a interface EmailValidator
    */
-  class EmailValidatorStub implements EmailValidator {
-    isValid(email: string): boolean {
-      return true;
-    }
-  }
-  const emailValidatorStub = new EmailValidatorStub();
+  const emailValidatorStub = makeEmailValidator();
   const sut = new SignUpController(emailValidatorStub);
   return {
     sut,
@@ -155,12 +168,7 @@ describe('SignUp Controller', () => {
   });
 
   test('Should return 500 if EmailValidator throws', () => {
-    class EmailValidatorStub implements EmailValidator {
-      isValid(email: string): boolean {
-        throw new Error();
-      }
-    }
-    const emailValidatorStub = new EmailValidatorStub();
+    const emailValidatorStub = makeEmailValidatorWithError();
     const sut = new SignUpController(emailValidatorStub);
     /**
      * Enviando um request com todos os parametros, e vamos validar se o EMAIL é valido
