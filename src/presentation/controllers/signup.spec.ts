@@ -124,6 +124,28 @@ describe('SignUp Controller', () => {
     );
   });
 
+  test('Should return 400 if password confirmation fails', () => {
+    const { sut } = makeSut();
+    /**
+     * Enviando os dados sem o password confirmation, sendo um campo obrigatorio!
+     * Tem que dar um erro 400 quando não enviamos um request sem o campo PASSWORD
+     */
+    const httpRequest = {
+      body: {
+        name: 'any_name',
+        email: 'any_email@email.com',
+        password: 'any_password',
+        passwordConfirmation: 'invalid_password',
+      },
+    };
+
+    const httpResponse = sut.handle(httpRequest);
+    expect(httpResponse.statusCode).toBe(400);
+    expect(httpResponse.body).toEqual(
+      new InvalidParamsError('passwordConfirmation'),
+    );
+  });
+
   // ? Todos os campos foram validados
 
   test('Should return 400 if an invalid email is provided', () => {
