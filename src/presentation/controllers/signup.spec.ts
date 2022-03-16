@@ -1,7 +1,7 @@
 import { SignUpController } from './signup';
 // Classe que vai lidar com os error
 import { ServerError, InvalidParamsError, MissingParamsError } from '../errors';
-import { EmailValidator } from '../protocols/email-validator';
+import { EmailValidator } from '../protocols';
 
 interface SutTypes {
   sut: SignUpController;
